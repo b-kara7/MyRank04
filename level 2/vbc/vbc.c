@@ -57,7 +57,6 @@ int expect(char **s, char c)
 {
     if (accept(s, c))
         return (1);
-    unexpected(**s);
     return (0);
 }
 
@@ -111,19 +110,18 @@ static node *parse_expr_r(char **s)
 // YAZMAN GEREKEN KISIM BURADA BİTİYOR
 // *****************************************************************
 
-node *parse_expr(char *s)
+node    *parse_expr(char *s)
 {
     char *p = s;
-    if (!p || *p == '\0')
-        unexpected('\0');
-        
     node *ret = parse_expr_r(&p);
-    if (*p) {                          
-        unexpected(*p);
+    if (&p) 
+    {
+        unexpected(*s);
+        destroy_tree(ret);
+        return (NULL);
     }
     return (ret);
 }
-
 int eval_tree(node *tree)
 {
     if (!tree) return 0;
