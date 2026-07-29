@@ -73,16 +73,17 @@ static node *parse_factor(char **s)
     {
         node n = {.type = VAL, .val = **s - '0', .l = NULL, .r = NULL};
         (*s)++;
-        return(new_node(n));
+        return (new_node(n));
     }
     if (accept(s, '('))
     {
         node *e = parse_expr_r(s);
-        expect(s, ')');
-        return e;
+        if (!expect(s, ')'))
+            unexpected(**s);
+        return (e);
     }
     unexpected(**s);
-    return NULL;
+    return (NULL);
 }
 
 static node *parse_term(char **s)
@@ -93,7 +94,7 @@ static node *parse_term(char **s)
         node n = { .type = MULTI, .l = left, .r = right };
         left = new_node(n);
     }
-    return left;
+    return (left);
 }
 
 static node *parse_expr_r(char **s)
@@ -104,24 +105,25 @@ static node *parse_expr_r(char **s)
         node n = { .type = ADD, .l = left, .r = right };
         left = new_node(n);
     }
-    return left;
+    return (left);
 }
 
 // YAZMAN GEREKEN KISIM BURADA BİTİYOR
 // *****************************************************************
 
 node    *parse_expr(char *s)
-{
+{ //burayı unutma
     char *p = s;
     node *ret = parse_expr_r(&p);
-    if (&p) 
+    if (*p) 
     {
-        unexpected(*s);
+        unexpected(*p);
         destroy_tree(ret);
         return (NULL);
     }
     return (ret);
 }
+
 int eval_tree(node *tree)
 {
     if (!tree) return 0;
@@ -134,7 +136,7 @@ int eval_tree(node *tree)
         case VAL:
             return (tree->val);
     }
-    return 0;
+    return (0);
 }
 
 int main(int argc, char **argv)
@@ -144,5 +146,5 @@ int main(int argc, char **argv)
     node *tree = parse_expr(argv[1]);
     printf("%d\n", eval_tree(tree));
     destroy_tree(tree);
-    return 0;
+    return (0);
 }
