@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <malloc.h>
 #include <ctype.h>
 
 typedef struct node {
@@ -15,9 +15,9 @@ typedef struct node {
 
 node    *new_node(node n)
 {
-    node *ret = calloc(1, sizeof(*ret));
+    node *ret = calloc(1, sizeof(node));
     if (!ret)
-        exit(1);
+        return (NULL);
     *ret = n;
     return (ret);
 }
@@ -40,7 +40,6 @@ void    unexpected(char c)
         printf("Unexpected token '%c'\n", c);
     else
         printf("Unexpected end of input\n");
-    exit(1);
 }
 
 int accept(char **s, char c)
@@ -60,9 +59,6 @@ int expect(char **s, char c)
     return (0);
 }
 
-// ***********************************
-// YAZMAN GEREKEN KISIM BURADAN BAŞLIYOR
-
 static node *parse_expr_r(char **s);
 static node *parse_term   (char **s);
 static node *parse_factor (char **s);
@@ -78,8 +74,11 @@ static node *parse_factor(char **s)
     if (accept(s, '('))
     {
         node *e = parse_expr_r(s);
-        if (!expect(s, ')'))
-            unexpected(**s);
+        if(!expect(s, ')'))
+        {
+            destroy_tree(e);
+            return NULL;
+        }
         return (e);
     }
     unexpected(**s);
@@ -89,8 +88,18 @@ static node *parse_factor(char **s)
 static node *parse_term(char **s)
 {
     node *left = parse_factor(s);
-    while (accept(s, '*')) {
+      if (!left)
+    {
+            return NULL;
+    }
+    while (accept(s, '*')) 
+    {
         node *right = parse_factor(s);
+        if (!right)
+        {
+            destroy_tree(left);
+            return NULL;
+        }
         node n = { .type = MULTI, .l = left, .r = right };
         left = new_node(n);
     }
@@ -100,21 +109,36 @@ static node *parse_term(char **s)
 static node *parse_expr_r(char **s)
 {
     node *left = parse_term(s);
-    while (accept(s, '+')) {
+    if (!left)
+        {
+            return NULL;
+        }
+    while (accept(s, '+')) 
+    {
         node *right = parse_term(s);
+        if (!right)
+        {
+            destroy_tree(left);
+            return NULL;
+        }
+        
         node n = { .type = ADD, .l = left, .r = right };
         left = new_node(n);
+        if (!left)
+        {
+            return NULL;
+        }
+        
     }
     return (left);
 }
 
-// YAZMAN GEREKEN KISIM BURADA BİTİYOR
-// *****************************************************************
 
 node    *parse_expr(char *s)
-{ //burayı unutma
+{
     char *p = s;
     node *ret = parse_expr_r(&p);
+
     if (*p) 
     {
         unexpected(*p);
@@ -126,7 +150,6 @@ node    *parse_expr(char *s)
 
 int eval_tree(node *tree)
 {
-    if (!tree) return 0;
     switch (tree->type)
     {
         case ADD:
@@ -136,7 +159,7 @@ int eval_tree(node *tree)
         case VAL:
             return (tree->val);
     }
-    return (0);
+    return(0);
 }
 
 int main(int argc, char **argv)
@@ -144,7 +167,8 @@ int main(int argc, char **argv)
     if (argc != 2)
         return (1);
     node *tree = parse_expr(argv[1]);
+    if (!tree)
+        return (1);
     printf("%d\n", eval_tree(tree));
     destroy_tree(tree);
-    return (0);
 }
